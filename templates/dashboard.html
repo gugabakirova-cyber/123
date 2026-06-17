@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% set page_title = 'Главная' %}
+{% block content %}
+
+<section class="kpi-grid dashboard-kpis">
+    <div class="kpi-card income"><div><span>Доход</span><strong>{{ finance.income }} ₸</strong><small>Выручка выбранного склада</small></div><div class="sparkline up"></div></div>
+    <div class="kpi-card expense"><div><span>Расход</span><strong>{{ finance.expenses }} ₸</strong><small>Контроль затрат</small></div><div class="sparkline down"></div></div>
+    <div class="kpi-card profit"><div><span>Прибыль</span><strong>{{ finance.profit }} ₸</strong><small>Финансовый результат</small></div><div class="sparkline up blue"></div></div>
+    <div class="kpi-card stock"><div><span>Стоимость склада</span><strong>{{ finance.stock_value }} ₸</strong><small>{{ stats.products_count }} товаров</small></div><div class="sparkline up orange"></div></div>
+</section>
+
+<div class="dash-grid">
+
+    <section class="panel wide-panel">
+        <div class="section-header">
+            <div>
+                <h2>График продаж за месяц</h2>
+                <p>Наведите на столбец, чтобы увидеть подсказку</p>
+            </div>
+            <select><option>Месяц</option></select>
+        </div>
+        <div class="fake-line-chart chart-tooltip-area">
+            <span data-tooltip="Неделя 1: динамика продаж"></span>
+            <span data-tooltip="Неделя 2: динамика продаж"></span>
+            <span data-tooltip="Неделя 3: динамика продаж"></span>
+            <span data-tooltip="Неделя 4: динамика продаж"></span>
+            <span data-tooltip="Неделя 5: динамика продаж"></span>
+            <span data-tooltip="Неделя 6: динамика продаж"></span>
+            <span data-tooltip="Неделя 7: динамика продаж"></span>
+            <span data-tooltip="Неделя 8: динамика продаж"></span>
+            <span data-tooltip="Неделя 9: динамика продаж"></span>
+            <span data-tooltip="Неделя 10: динамика продаж"></span>
+            <span data-tooltip="Неделя 11: динамика продаж"></span>
+            <span data-tooltip="Неделя 12: динамика продаж"></span>
+        </div>
+    </section>
+
+    <section class="panel donut-panel">
+        <h2>Топ продаж</h2>
+        <div class="donut real-donut tooltip-donut" style="background: conic-gradient({{ sales_chart.gradient|safe }});">
+            <span>{{ top_products|length }}</span>
+            <div class="chart-tooltip-box">
+                {% for item in sales_chart['items'] %}
+                    <b>{{ item.label }}</b>: {{ item.value }} ₸ · {{ item.percent }}%<br>
+                {% else %}
+                    Продаж пока нет
+                {% endfor %}
+            </div>
+        </div>
+        <ul class="legend-list colored-legend">
+            {% for item in sales_chart['items'] %}
+            <li>
+                <i style="background: {{ item.color }}"></i>
+                <b>{{ item.label }}</b>
+                <small>{{ item.percent }}%</small>
+                <span>{{ item.value }} ₸</span>
+            </li>
+            {% else %}
+            <li>
+                <b>Продаж пока нет</b>
+                <span>0 ₸</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <section class="panel donut-panel">
+        <h2>Топ расходов</h2>
+        <div class="donut real-donut tooltip-donut" style="background: conic-gradient({{ expenses_chart.gradient|safe }});">
+            <span>{{ top_expenses|length }}</span>
+            <div class="chart-tooltip-box">
+                {% for item in expenses_chart['items'] %}
+                    <b>{{ item.label }}</b>: {{ item.value }} ₸ · {{ item.percent }}%<br>
+                {% else %}
+                    Расходов пока нет
+                {% endfor %}
+            </div>
+        </div>
+        <ul class="legend-list colored-legend">
+            {% for item in expenses_chart['items'] %}
+            <li>
+                <i style="background: {{ item.color }}"></i>
+                <b>{{ item.label }}</b>
+                <small>{{ item.percent }}%</small>
+                <span>{{ item.value }} ₸</span>
+            </li>
+            {% else %}
+            <li>
+                <b>Расходов пока нет</b>
+                <span>0 ₸</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <section class="panel full-panel">
+        <div class="section-header">
+            <div>
+                <h2>Последние действия</h2>
+                <p>Журнал последних операций системы</p>
+            </div>
+            <a class="btn-light" href="{{ url_for('audit_logs') }}">Смотреть все</a>
+        </div>
+        <table class="modern-table">
+            <thead><tr><th>Действие</th><th>Объект</th><th>Детали</th><th>Дата</th></tr></thead>
+            <tbody>
+            {% for log in recent_logs %}
+            <tr><td><span class="status success">{{ log.action_type }}</span></td><td><strong>{{ log.object_name }}</strong></td><td>{{ log.details }}</td><td>{{ log.created_at }}</td></tr>
+            {% else %}
+            <tr><td colspan="4">Действий пока нет</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+</div>
+{% endblock %}

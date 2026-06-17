@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% set page_title = 'Расходы' %}
+{% block content %}
+<section class="page-toolbar"><div class="toolbar-left"><input placeholder="Поиск по описанию или категории..."><input type="date"><button class="btn-light">Фильтры</button></div><div class="export-buttons"><a class="export-btn" href="{{ url_for('download_report', report_type='expenses', fmt='pdf') }}">PDF</a><a class="export-btn" href="{{ url_for('download_report', report_type='expenses', fmt='excel') }}">Excel</a></div>{% if session.get('role') != 'guest' %}<button class="btn-primary admin-only" onclick="document.querySelector('.new-expense').classList.toggle('show')">+ Новый расход</button>{% endif %}</section>
+{% if session.get('role') != 'guest' %}<section class="panel new-expense collapsible admin-only"><form class="form-grid product-form" method="post"><input name="title" placeholder="Наименование расхода" required><input name="category" placeholder="Категория" required><input name="amount" type="number" step="0.01" placeholder="Сумма" required><input name="comment" placeholder="Комментарий"><button>Добавить расход</button></form></section>{% endif %}
+<section class="category-cards">
+{% set cats = {} %}{% for e in expenses %}{% set _ = cats.update({e.category: cats.get(e.category, 0) + e.amount|float}) %}{% endfor %}
+{% for cat,total in cats.items() %}<div class="mini-card"><span>▤</span><h3>{{ cat }}</h3><strong>{{ total }} ₸</strong><small>{{ loop.index }} категория</small></div>{% else %}<div class="mini-card"><span>▤</span><h3>Расходов пока нет</h3><strong>0 ₸</strong></div>{% endfor %}
+</section>
+<section class="panel page-panel"><h2>Последние расходы</h2><table class="modern-table"><thead><tr><th>Дата и время</th><th>Категория</th><th>Описание / Комментарий</th><th>Сумма</th><th>Способ оплаты</th><th>Кассир</th></tr></thead><tbody>{% for e in expenses %}<tr><td>{{ e.created_at }}</td><td>{{ e.category }}</td><td><strong>{{ e.title }}</strong><br><small>{{ e.comment }}</small></td><td class="text-danger"><strong>{{ e.amount }} ₸</strong></td><td>Наличные</td><td>{{ session.get('user') }}</td></tr>{% else %}<tr><td colspan="6">Расходы пока не добавлены</td></tr>{% endfor %}</tbody></table></section>
+{% endblock %}

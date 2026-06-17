@@ -1,0 +1,3 @@
+<table><thead><tr><th>Товар</th><th>Кол-во</th><th>Сумма</th></tr></thead><tbody>
+{% for item in top_products %}<tr><td>{{ item.name }}</td><td>{{ item.quantity }}</td><td>{{ item.total }} ₸</td></tr>{% else %}<tr><td colspan="3">Продаж пока нет</td></tr>{% endfor %}
+</tbody></table>

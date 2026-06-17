@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% set page_title = 'История ревизий' %}
+{% block content %}
+
+<section class="page-toolbar">
+    <div class="toolbar-left">
+        <input type="date">
+        <select>
+            <option>Все склады</option>
+        </select>
+        <input placeholder="Поиск по номеру ревизии...">
+    </div>
+
+    <div class="export-buttons">
+        <a class="export-btn" href="{{ url_for('download_report', report_type='inventory', fmt='pdf') }}">PDF</a>
+        <a class="export-btn" href="{{ url_for('download_report', report_type='inventory', fmt='excel') }}">Excel</a>
+        <button class="btn-light" type="button" onclick="window.print()">🖨 Печать</button>
+    </div>
+</section>
+
+<section class="kpi-grid">
+    <div class="kpi-card">
+        <span>Всего ревизий</span>
+        <strong>{{ checks|length }}</strong>
+    </div>
+
+    <div class="kpi-card income">
+        <span>Завершено</span>
+        <strong>{{ checks|length }}</strong>
+    </div>
+
+    <div class="kpi-card warning">
+        <span>В процессе</span>
+        <strong>0</strong>
+    </div>
+
+    <div class="kpi-card expense">
+        <span>Общее расхождение</span>
+        <strong>—</strong>
+    </div>
+</section>
+
+<section class="panel page-panel">
+    <table class="modern-table">
+        <thead>
+            <tr>
+                <th>№ ревизии</th>
+                <th>Дата и время</th>
+                <th>Склад</th>
+                <th>Пользователь</th>
+                <th>Товаров</th>
+                <th>Статус</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for c in checks %}
+            <tr>
+                <td>
+                    <a href="{{ url_for('inventory_detail', check_id=c.id) }}">#{{ c.id }}</a>
+                </td>
+                <td>{{ c.created_at }}</td>
+                <td>Склад №{{ c.location_id }}</td>
+                <td>{{ c.username }}</td>
+                <td>{{ c.items_count }}</td>
+                <td><span class="status success">Завершена</span></td>
+                <td class="actions">
+                    <a href="{{ url_for('inventory_detail', check_id=c.id) }}">👁</a>
+                    <a onclick="window.print()">🖨</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7">Ревизий пока нет</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+{% endblock %}

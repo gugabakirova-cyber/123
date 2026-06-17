@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% set page_title = 'Выберите склад' %}
+{% block content %}
+{% set names = {1:'Мамыр',2:'Розыбакиев',3:'Абылайхана'} %}
+{% set addresses = {1:'Мамыр 7, 8Б',2:'Розыбакиева 133',3:'Абылайхана 24'} %}
+<section class="select-hero">
+    <div>
+        <h2>Выберите склад</h2>
+        <p>Выберите точку, с которой будете работать</p>
+        <span class="hero-line"></span>
+    </div>
+    <div class="cafe-illustration">📍</div>
+</section>
+<div class="warehouse-list">
+    {% for location in locations %}
+    <form method="post" class="warehouse-form">
+        <input type="hidden" name="location_id" value="{{ location.id }}">
+        <button class="warehouse-card" type="submit">
+            <div class="warehouse-tile">
+                <div class="mini-house">⌂</div>
+                <strong>Склад №{{ location.id }}</strong>
+            </div>
+            <div class="warehouse-divider"></div>
+            <div class="warehouse-main">
+                <h3>{{ names.get(location.id, location.name) }}</h3>
+                <p>📍 {{ addresses.get(location.id, location.address) }}</p>
+                <span>⌂ Склад №{{ location.id }}</span>
+            </div>
+            <div class="warehouse-arrow">›</div>
+        </button>
+    </form>
+    {% endfor %}
+</div>
+{% endblock %}

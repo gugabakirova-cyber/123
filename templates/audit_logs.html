@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% set page_title = 'Журнал действий' %}
+{% block content %}
+<section class="page-toolbar"><div class="toolbar-left"><input placeholder="Поиск по пользователю, действию или объекту..."><input type="date"><button class="btn-light">Фильтры</button></div><button class="btn-light" onclick="window.print()">Печать</button></section>
+<section class="panel page-panel"><table class="modern-table"><thead><tr><th>Дата</th><th>Пользователь</th><th>Действие</th><th>Объект</th><th>Детали</th></tr></thead><tbody>{% for log in logs %}<tr><td>{{ log.created_at }}</td><td><strong>{{ log.username }}</strong></td><td><span class="status success">{{ log.action_type }}</span></td><td>{{ log.object_name }}</td><td>{{ log.details }}</td></tr>{% else %}<tr><td colspan="5">Действий пока нет</td></tr>{% endfor %}</tbody></table></section>
+{% endblock %}

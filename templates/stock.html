@@ -1,0 +1,336 @@
+{% extends 'base.html' %}
+{% set page_title = 'Склад' %}
+{% block content %}
+
+<section class="page-toolbar">
+    <div class="toolbar-left">
+        <input placeholder="Поиск товара...">
+        <select>
+            <option>Все категории</option>
+        </select>
+    </div>
+
+    <div class="export-buttons">
+        <button class="export-btn print-btn" type="button" onclick="window.print()">Печать</button>
+        <a class="export-btn" href="{{ url_for('download_report', report_type='stock', fmt='pdf') }}">PDF</a>
+        <a class="export-btn" href="{{ url_for('download_report', report_type='stock', fmt='excel') }}">Excel</a>
+    </div>
+
+    {% if session.get('role') != 'guest' %}
+    <div class="operation-wrapper admin-only">
+        <button class="btn-primary" type="button" onclick="toggleOperationMenu()">+ Операция</button>
+
+        <div class="operation-menu" id="operationMenu">
+            <button type="button" onclick="openStockModal('transferModal')">↔ Перемещение</button>
+            <button type="button" onclick="openStockModal('addProductModal')">➕ Добавить товар</button>
+            <button type="button" onclick="openStockModal('writeoffModal')">➖ Списание</button>
+        </div>
+    </div>
+    <div class="stock-modal" id="editProductModal">
+    <div class="stock-modal-header">
+        <h2>Редактировать товар</h2>
+        <button type="button" onclick="closeStockModals()">×</button>
+    </div>
+
+    <form method="post" class="stock-modal-form">
+        <input type="hidden" name="operation_type" value="edit_product">
+        <input type="hidden" name="product_id" id="editProductId">
+
+        <label>Название</label>
+        <input name="name" id="editProductName" required>
+
+        <label>Категория</label>
+        <input name="category" id="editProductCategory" required>
+
+        <label>Единица измерения</label>
+        <select name="unit" id="editProductUnit" required>
+            <option value="кг">кг</option>
+            <option value="г">г</option>
+            <option value="л">л</option>
+            <option value="мл">мл</option>
+            <option value="шт">шт</option>
+        </select>
+
+        <label>Закупочная цена</label>
+        <input name="purchase_price" id="editProductPrice" type="number" step="0.01" required>
+
+        <label>Минимальный остаток</label>
+        <input name="min_quantity" id="editProductMin" type="number" step="0.001" required>
+
+        <label>Текущий остаток</label>
+        <input name="quantity" id="editProductQuantity" type="number" step="0.001" required>
+
+        <div class="modal-actions">
+            <button class="btn-light" type="button" onclick="closeStockModals()">Отмена</button>
+            <button class="btn-primary" type="submit">Сохранить</button>
+        </div>
+    </form>
+</div>
+    {% endif %}
+</section>
+
+{% if session.get('role') != 'guest' %}
+
+<div class="modal-overlay" id="stockModalOverlay" onclick="closeStockModals()"></div>
+
+<div class="stock-modal" id="transferModal">
+    <div class="stock-modal-header">
+        <h2>Перемещение товара</h2>
+        <button type="button" onclick="closeStockModals()">×</button>
+    </div>
+
+    <form method="post" class="stock-modal-form">
+        <input type="hidden" name="action" value="transfer">
+
+        <label>Наименование</label>
+        <select name="product_id" required>
+            {% for p in products %}
+            <option value="{{ p.id }}">{{ p.name }} — {{ p.quantity }} {{ p.unit }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Количество</label>
+        <input name="quantity" type="number" step="0.001" placeholder="Введите количество" required>
+
+        <label>Выбрать склад</label>
+        <select name="target_location_id" required>
+            <option value="1">Склад №1</option>
+            <option value="2">Склад №2</option>
+            <option value="3">Склад №3</option>
+        </select>
+
+        <input type="hidden" name="quantity_unit" value="">
+
+        <div class="modal-actions">
+            <button class="btn-light" type="button" onclick="closeStockModals()">Отмена</button>
+            <button class="btn-primary" type="submit">Сохранить</button>
+        </div>
+    </form>
+</div>
+
+<div class="stock-modal" id="addProductModal">
+    <div class="stock-modal-header">
+        <h2>Добавить товар</h2>
+        <button type="button" onclick="closeStockModals()">×</button>
+    </div>
+
+    <form method="post" class="stock-modal-form">
+        <input type="hidden" name="operation_type" value="add_product">
+
+        <label>Наименование</label>
+        <input name="name" pattern="[A-Za-zА-Яа-яЁёҰұҮүҚқӨөҺһІіӘәҒғҢң\s]+" placeholder="Например: молоко" required>
+
+        <label>Количество</label>
+        <input name="quantity" type="number" step="0.001" placeholder="Введите количество" required>
+
+        <label>Единица измерения</label>
+        <select name="unit" required>
+            <option value="кг">кг</option>
+            <option value="г">г</option>
+            <option value="л">л</option>
+            <option value="мл">мл</option>
+            <option value="шт">шт</option>
+        </select>
+
+        <label>Закупочная цена</label>
+        <input name="purchase_price" type="number" step="0.01" placeholder="Введите цену" required>
+
+        <div class="modal-actions">
+            <button class="btn-light" type="button" onclick="closeStockModals()">Отмена</button>
+            <button class="btn-primary" type="submit">Добавить</button>
+        </div>
+    </form>
+</div>
+
+<div class="stock-modal" id="writeoffModal">
+    <div class="stock-modal-header">
+        <h2>Списание товара</h2>
+        <button type="button" onclick="closeStockModals()">×</button>
+    </div>
+
+    <form method="post" class="stock-modal-form">
+        <input type="hidden" name="action" value="writeoff">
+
+        <label>Наименование</label>
+        <select name="product_id" required>
+            {% for p in products %}
+            <option value="{{ p.id }}">{{ p.name }} — {{ p.quantity }} {{ p.unit }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Количество</label>
+        <input name="quantity" type="number" step="0.001" placeholder="Введите количество" required>
+
+        <input type="hidden" name="quantity_unit" value="">
+
+        <label>Причина списания</label>
+        <input name="comment" pattern="[A-Za-zА-Яа-яЁёҰұҮүҚқӨөҺһІіӘәҒғҢң\s]+" placeholder="Например: порча товара" required>
+
+        <div class="modal-actions">
+            <button class="btn-light" type="button" onclick="closeStockModals()">Отмена</button>
+            <button class="btn-primary" type="submit">Списать</button>
+        </div>
+    </form>
+</div>
+
+{% endif %}
+
+<section class="kpi-grid">
+    <div class="kpi-card stock">
+        <span>Общая стоимость склада</span>
+        <strong>{{ products|sum(attribute='purchase_price') }} ₸</strong>
+    </div>
+    <div class="kpi-card">
+        <span>Товаров на складе</span>
+        <strong>{{ products|length }}</strong>
+    </div>
+    <div class="kpi-card warning">
+        <span>Низкий остаток</span>
+        <strong>{{ products|selectattr('quantity','le',0)|list|length }}</strong>
+    </div>
+    <div class="kpi-card danger">
+        <span>Нет в наличии</span>
+        <strong>{{ products|selectattr('quantity','equalto',0)|list|length }}</strong>
+    </div>
+</section>
+
+<section class="panel page-panel">
+    <h2>Актуальные остатки склада</h2>
+
+    <table class="modern-table">
+        <thead>
+            <tr>
+                <th>Товар</th>
+                <th>Категория</th>
+                <th>Остаток</th>
+                <th>Ед.</th>
+                <th>Закуп. цена</th>
+                <th>Сумма остатка</th>
+                <th>Статус</th>
+                {% if session.get('role') != 'guest' %}
+                <th>...</th>
+                {% endif %}
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for p in products %}
+            <tr>
+                <td><strong>{{ p.name }}</strong></td>
+                <td>{{ p.category }}</td>
+                <td class="{% if p.quantity <= p.min_quantity %}text-danger{% else %}text-success{% endif %}">
+                    {{ '%g'|format(p.quantity|float) }}
+                </td>
+                <td>{{ p.unit }}</td>
+                <td>{{ p.purchase_price }} ₸</td>
+                <td>{{ (p.quantity|float * p.purchase_price|float)|round(2) }} ₸</td>
+                <td>
+                    {% if p.quantity <= 0 %}
+                    <span class="status danger">Нет</span>
+                    {% elif p.quantity <= p.min_quantity %}
+                    <span class="status warning">Низкий</span>
+                    {% else %}
+                    <span class="status success">Норма</span>
+                    {% endif %}
+                </td>
+
+                {% if session.get('role') != 'guest' %}
+                <td>
+                    <div class="row-action-wrapper">
+                        <button class="row-action-btn" type="button" onclick="toggleRowMenu(this)">⋮</button>
+
+                        <div class="row-action-menu">
+                            <button type="button"
+                                    onclick="openEditProductModal(
+                                        '{{ p.id }}',
+                                        '{{ p.name }}',
+                                        '{{ p.category }}',
+                                        '{{ p.unit }}',
+                                        '{{ p.purchase_price }}',
+                                        '{{ p.min_quantity }}',
+                                        '{{ p.quantity }}'
+                                    )">
+                                ✏ Редактировать
+                            </button>
+
+                            <form method="post" onsubmit="return confirm('Удалить товар?')">
+                                <input type="hidden" name="operation_type" value="delete_product">
+                                <input type="hidden" name="product_id" value="{{ p.id }}">
+                                <button type="submit" class="danger-action">🗑 Удалить</button>
+                            </form>
+                        </div>
+                    </div>
+                </td>
+                {% endif %}
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="{% if session.get('role') != 'guest' %}8{% else %}7{% endif %}">Склад пуст</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+<script>
+function toggleOperationMenu() {
+    const menu = document.getElementById('operationMenu');
+    if (menu) {
+        menu.classList.toggle('show');
+    }
+}
+
+function openStockModal(modalId) {
+    const menu = document.getElementById('operationMenu');
+    const overlay = document.getElementById('stockModalOverlay');
+    const modal = document.getElementById(modalId);
+
+    if (menu) menu.classList.remove('show');
+    if (overlay) overlay.classList.add('show');
+    if (modal) modal.classList.add('show');
+}
+
+function closeStockModals() {
+    const overlay = document.getElementById('stockModalOverlay');
+    if (overlay) overlay.classList.remove('show');
+
+    document.querySelectorAll('.stock-modal').forEach(modal => {
+        modal.classList.remove('show');
+    });
+}
+
+function toggleRowMenu(button) {
+    document.querySelectorAll('.row-action-menu').forEach(menu => {
+        if (menu !== button.nextElementSibling) {
+            menu.classList.remove('show');
+        }
+    });
+
+    button.nextElementSibling.classList.toggle('show');
+}
+
+function openEditProductModal(id, name, category, unit, price, minQuantity, quantity) {
+    document.querySelectorAll('.row-action-menu').forEach(menu => {
+        menu.classList.remove('show');
+    });
+
+    document.getElementById('editProductId').value = id;
+    document.getElementById('editProductName').value = name;
+    document.getElementById('editProductCategory').value = category;
+    document.getElementById('editProductUnit').value = unit;
+    document.getElementById('editProductPrice').value = price;
+    document.getElementById('editProductMin').value = minQuantity;
+    document.getElementById('editProductQuantity').value = quantity;
+
+    document.getElementById('stockModalOverlay').classList.add('show');
+    document.getElementById('editProductModal').classList.add('show');
+}
+
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeStockModals();
+    }
+});
+</script>
+
+{% endblock %}

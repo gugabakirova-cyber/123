@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% set page_title = 'Отчеты' %}
+{% block content %}
+<section class="page-toolbar">
+    <div class="toolbar-left">
+        <input type="date">
+        <select><option>Все склады</option></select>
+        <button class="btn-light">30 дней</button>
+        <button class="btn-light">Месяц</button>
+    </div>
+    <button class="btn-light">Конструктор отчетов</button>
+</section>
+
+<section class="report-cards">
+    <div class="report-card blue"><span>◇</span><h3>Склад</h3><p>Остатки, движение, списания</p><a class="report-open-btn" href="{{ url_for('stock') }}">Открыть</a></div>
+    <div class="report-card orange"><span>🛒</span><h3>Продажи</h3><p>Выручка, средний чек, товары</p><a class="report-open-btn" href="{{ url_for('sales') }}">Открыть</a></div>
+    <div class="report-card red"><span>↓</span><h3>Расходы</h3><p>Категории расходов</p><a class="report-open-btn" href="{{ url_for('expenses') }}">Открыть</a></div>
+    <div class="report-card violet"><span>▣</span><h3>Ревизии</h3><p>История расхождений</p><a class="report-open-btn" href="{{ url_for('inventory_history') }}">Открыть</a></div>
+</section>
+
+<section class="panel page-panel"><h2>Популярные отчеты</h2><div class="reports-list">
+{% set popular_reports = [
+    ('Остатки на складе','stock'),
+    ('Движение товаров','movements'),
+    ('Анализ продаж','sales'),
+    ('Топ товаров','top_products'),
+    ('Товары с низким остатком','low_stock'),
+    ('Списания товаров','writeoffs'),
+    ('История ревизий','inventory')
+] %}
+{% for name, report_type in popular_reports %}
+<div class="report-row"><strong>{{ name }}</strong><a href="{{ url_for('download_report', report_type=report_type, fmt='pdf') }}">PDF</a><a href="{{ url_for('download_report', report_type=report_type, fmt='excel') }}">Excel</a></div>
+{% endfor %}
+</div></section>
+{% endblock %}

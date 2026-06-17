@@ -1,0 +1,396 @@
+{% extends 'base.html' %}
+{% set page_title = 'Техкарты' %}
+{% block content %}
+
+<section class="page-toolbar">
+    <div class="toolbar-left">
+        <input placeholder="Поиск по названию позиции...">
+        <select><option>Все категории</option></select>
+        <select><option>Все статусы</option></select>
+    </div>
+
+    {% if session.get('role') != 'guest' %}
+    <button class="btn-primary admin-only" type="button" onclick="toggleRecipeDrawer()">+ Создать техкарту</button>
+    {% endif %}
+</section>
+
+<section class="kpi-grid">
+    <div class="kpi-card"><span>Всего техкарт</span><strong>{{ recipes|length }}</strong></div>
+    <div class="kpi-card income"><span>Себестоимость</span><strong>авто</strong></div>
+    <div class="kpi-card warning"><span>Выход порции</span><strong>ручной</strong></div>
+    <div class="kpi-card profit"><span>Ингредиенты</span><strong>мульти</strong></div>
+</section>
+
+<div class="recipe-layout">
+
+    <section class="panel page-panel">
+    <h2>Список техкарт</h2>
+
+    <table class="modern-table">
+        <thead>
+            <tr>
+                <th>Наименование</th>
+                <th>Кол-во ингредиентов</th>
+                <th>Выход порции</th>
+                <th>Себестоимость</th>
+                <th>Статус</th>
+                {% if session.get('role') != 'guest' %}
+                <th>...</th>
+                {% endif %}
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for r in recipes %}
+            <tr>
+                <td style="display:none;">
+                    <div class="recipe-hidden-ingredients">
+            {% for ing in r.ingredients %}
+                    <div
+            data-product-id="{{ ing.product_id }}"
+            data-amount="{{ ing.amount }}"
+            data-unit="{{ ing.unit }}">
+                    </div>
+            {% endfor %}
+                    </div>
+                </td>
+                <td><strong>{{ r.dish_name }}</strong></td>
+                <td>{{ r.ingredients|length }}</td>
+                <td>
+                    <span class="portion-tooltip">
+                        {{ '%g'|format(r.output_quantity|float) }}
+
+                        {% if r.output_unit == 'ml' %}
+                        мл
+                        {% elif r.output_unit == 'g' %}
+                        г
+                        {% elif r.output_unit == 'kg' %}
+                        кг
+                        {% elif r.output_unit == 'l' %}
+                        л
+                        {% elif r.output_unit == 'sht' %}
+                        шт
+                        {% else %}
+                        {{ r.output_unit }}
+                        {% endif %}
+
+                        <span class="tooltip-box">
+                            {% for ing in r.ingredients %}
+                                <b>{{ ing.product_name }}</b> — {{ '%g'|format(ing.amount|float) }}
+
+                                {% if ing.unit == 'ml' %}
+                                мл
+                                {% elif ing.unit == 'g' %}
+                                г
+                                {% elif ing.unit == 'kg' %}
+                                кг
+                                {% elif ing.unit == 'l' %}
+                                л
+                                {% elif ing.unit == 'sht' %}
+                                шт
+                                {% else %}
+                                {{ ing.unit }}
+                                {% endif %}<br>
+                            {% endfor %}
+                        </span>
+                    </span>
+                </td>
+                <td>{{ "%.2f"|format(r.cost|float) }} ₸</td>
+                <td><span class="status success">Активна</span></td>
+
+                {% if session.get('role') != 'guest' %}
+                <td>
+                    <div class="row-action-wrapper">
+    <button class="row-action-btn" type="button" onclick="toggleRowMenu(this)">⋮</button>
+
+    <div class="row-action-menu">
+            <button type="button"
+                    class="recipe-menu-btn"
+                    onclick="openEditRecipeModal(
+                        '{{ r.dish_name }}',
+                        '{{ r.output_quantity }}',
+                        '{{ r.output_unit }}',
+                        this
+                    )">
+                ✏ Редактировать
+            </button>
+
+        <form method="post" class="recipe-delete-form"
+              onsubmit="return confirm('Удалить техкарту?')">
+            <input type="hidden" name="operation_type" value="delete_recipe">
+            <input type="hidden" name="dish_name" value="{{ r.dish_name }}">
+            <button type="submit" class="recipe-menu-btn recipe-menu-delete">🗑 Удалить</button>
+        </form>
+    </div>
+</div>
+                    </div>
+                </td>
+                <div class="modal-overlay" id="recipeModalOverlay" onclick="closeRecipeModal()"></div>
+
+<div class="stock-modal" id="editRecipeModal">
+    <div class="stock-modal-header">
+        <h2>Редактировать техкарту</h2>
+        <button type="button" onclick="closeRecipeModal()">×</button>
+    </div>
+
+        <form method="post" class="stock-modal-form" id="editRecipeForm">
+        <input type="hidden" name="operation_type" value="edit_recipe">
+        <input type="hidden" name="old_dish_name" id="editOldDishName">
+
+        <label>Название позиции</label>
+        <input name="dish_name" id="editDishName" required>
+
+        <label>Выход порции</label>
+        <input name="output_quantity" id="editOutputQuantity" type="number" step="0.001" required>
+
+        <label>Ед. выхода</label>
+        <select name="output_unit" id="editOutputUnit" required>
+            <option value="ml">мл</option>
+            <option value="g">г</option>
+            <option value="kg">кг</option>
+            <option value="l">л</option>
+            <option value="sht">шт</option>
+            <option value="порция">порция</option>
+        </select>
+        <h3>Ингредиенты</h3>
+
+<div id="editIngredientsList">
+    <div class="ingredient-row">
+        <select name="product_id" form="editRecipeForm" required>
+            {% for p in products %}
+            <option value="{{ p.id }}">{{ p.name }} — остаток {{ '%g'|format(p.quantity|float) }} {{ p.unit }}</option>
+            {% endfor %}
+        </select>
+
+        <input name="amount" form="editRecipeForm" type="number" step="0.001" placeholder="Кол-во" required>
+
+        <select name="unit" form="editRecipeForm" required>
+            <option value="g">г</option>
+            <option value="kg">кг</option>
+            <option value="ml">мл</option>
+            <option value="l">л</option>
+            <option value="sht">шт</option>
+        </select>
+
+        <button type="button" class="btn-light" onclick="removeIngredientRow(this)">×</button>
+    </div>
+</div>
+
+<button class="btn-light" type="button" onclick="addEditIngredientRow()">+ Добавить ингредиент</button>
+        <div class="modal-actions">
+            <button class="btn-light" type="button" onclick="closeRecipeModal()">Отмена</button>
+            <button class="btn-primary" type="submit" form="editRecipeForm">Сохранить</button>
+        </div>
+    </form>
+</div>
+                {% endif %}
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="{% if session.get('role') != 'guest' %}6{% else %}5{% endif %}">
+                    Техкарты пока не добавлены
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+    {% if session.get('role') != 'guest' %}
+    <aside class="panel recipe-drawer admin-only" id="recipeDrawer">
+        <div class="drawer-header">
+            <h2>Создание техкарты</h2>
+            <button type="button" onclick="toggleRecipeDrawer()">×</button>
+        </div>
+
+        <form method="post" class="drawer-form" id="recipeForm">
+            <label>Название позиции</label>
+            <input name="dish_name" placeholder="Например: Айс Латте" required>
+
+          <div class="recipe-edit-grid">
+
+    <div>
+        <label>Название позиции</label>
+        <input name="dish_name" id="editDishName" required>
+    </div>
+
+    <div>
+        <label>Выход порции</label>
+        <input
+            name="output_quantity"
+            id="editOutputQuantity"
+            type="number"
+            step="0.001"
+            required>
+    </div>
+
+    <div>
+        <label>Ед. выхода</label>
+                    <select name="output_unit" id="editOutputUnit">
+                    <option value="порция">порция</option>
+                    <option value="ml">мл</option>
+                    <option value="g">г</option>
+                    <option value="kg">кг</option>
+                    <option value="l">л</option>
+                    <option value="sht">шт</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <h3>Ингредиенты</h3>
+
+            <div id="ingredientsList">
+                <div class="ingredient-row">
+                    <select name="product_id" required>
+                        {% for p in products %}
+                        <option value="{{ p.id }}">{{ p.name }} — остаток {{ p.quantity }} {{ p.unit }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <input name="amount" type="number" step="0.001" placeholder="Кол-во" required>
+
+                    <select name="unit" required>
+                        <option value="г">г</option>
+                        <option value="кг">кг</option>
+                        <option value="мл">мл</option>
+                        <option value="л">л</option>
+                        <option value="шт">шт</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="btn-light" type="button" onclick="addIngredientRow()">+ Добавить ингредиент</button>
+            <button class="btn-primary" type="submit">Сохранить техкарту</button>
+        </form>
+    </aside>
+    {% endif %}
+
+</div>
+
+
+
+<script>
+function toggleRecipeDrawer() {
+    const drawer = document.getElementById('recipeDrawer');
+    if (drawer) {
+        drawer.classList.toggle('show');
+    }
+}
+
+function addIngredientRow() {
+    const list = document.getElementById('ingredientsList');
+    const first = list.querySelector('.ingredient-row');
+    const clone = first.cloneNode(true);
+
+    clone.querySelectorAll('input').forEach(input => input.value = '');
+    clone.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
+
+    list.appendChild(clone);
+}
+function toggleRowMenu(button) {
+    document.querySelectorAll('.row-action-menu').forEach(menu => {
+        if (menu !== button.nextElementSibling) {
+            menu.classList.remove('show');
+        }
+    });
+
+    button.nextElementSibling.classList.toggle('show');
+}
+function editRecipe(dishName) {
+    const drawer = document.getElementById('recipeDrawer');
+    const nameInput = document.querySelector('input[name="dish_name"]');
+
+    if (drawer) {
+        drawer.classList.add('show');
+    }
+
+    if (nameInput) {
+        nameInput.value = dishName;
+        nameInput.focus();
+    }
+
+    document.querySelectorAll('.row-action-menu').forEach(menu => {
+        menu.classList.remove('show');
+    });
+}
+function openEditRecipeModal(dishName, outputQuantity, outputUnit, button) {
+    document.querySelectorAll('.row-action-menu').forEach(menu => {
+        menu.classList.remove('show');
+    });
+
+    document.getElementById('editOldDishName').value = dishName;
+    document.getElementById('editDishName').value = dishName;
+    document.getElementById('editOutputQuantity').value = outputQuantity;
+    document.getElementById('editOutputUnit').value = outputUnit;
+
+    const row = button.closest('tr');
+    const hiddenIngredients = row.querySelectorAll('.recipe-hidden-ingredients div');
+    const list = document.getElementById('editIngredientsList');
+    const firstRow = list.querySelector('.ingredient-row');
+
+    list.innerHTML = '';
+
+    hiddenIngredients.forEach(item => {
+        const clone = firstRow.cloneNode(true);
+
+        clone.querySelector('select[name="product_id"]').value = item.dataset.productId;
+        clone.querySelector('input[name="amount"]').value = item.dataset.amount;
+        clone.querySelector('select[name="unit"]').value = normalizeRecipeUnit(item.dataset.unit);
+
+        list.appendChild(clone);
+    });
+
+    if (hiddenIngredients.length === 0) {
+        list.appendChild(firstRow.cloneNode(true));
+    }
+
+    document.getElementById('recipeModalOverlay').classList.add('show');
+    document.getElementById('editRecipeModal').classList.add('show');
+}
+function addEditIngredientRow() {
+    const list = document.getElementById('editIngredientsList');
+    const first = list.querySelector('.ingredient-row');
+    const clone = first.cloneNode(true);
+
+    clone.querySelectorAll('input').forEach(input => input.value = '');
+    clone.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
+
+    list.appendChild(clone);
+}
+
+function removeIngredientRow(button) {
+    const list = document.getElementById('editIngredientsList');
+
+    if (list.querySelectorAll('.ingredient-row').length > 1) {
+        button.closest('.ingredient-row').remove();
+    }
+}
+
+function closeRecipeModal() {
+    document.getElementById('recipeModalOverlay').classList.remove('show');
+    document.getElementById('editRecipeModal').classList.remove('show');
+}
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.row-action-wrapper')) {
+        document.querySelectorAll('.row-action-menu').forEach(menu => {
+            menu.classList.remove('show');
+        });
+    }
+});
+function normalizeRecipeUnit(unit) {
+    const map = {
+        'г': 'g',
+        'гр': 'g',
+        'кг': 'kg',
+        'мл': 'ml',
+        'л': 'l',
+        'шт': 'sht',
+        'порция': 'portion'
+    };
+
+    return map[unit] || unit;
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title or 'SmartCafe' }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="{% if session.get('role') == 'guest' %}guest-mode{% endif %}">
+
+{% if not session.get('user') %}
+
+    {% block auth %}{% endblock %}
+
+{% elif not session.get('location_id') %}
+
+    <div class="location-only-page">
+        <header class="location-only-header">
+            <div class="brand-mini">
+                <div class="cup-logo">☕</div>
+                <div>
+                    <strong>SmartCafe</strong>
+                    <span>Веб-система учета продуктов, продаж и финансовых показателей кафе</span>
+                </div>
+            </div>
+            <div class="userbox compact-userbox">
+                <span class="avatar">●</span>
+                <div>
+                    <strong>{{ 'Администратор' if session.get('role') == 'admin' else 'Гость' }}</strong>
+                    <small>Склад не выбран</small>
+                </div>
+            </div>
+        </header>
+
+        <main class="content location-only-content">
+            {{ self.content() }}
+        </main>
+    </div>
+
+{% else %}
+
+<div class="app-shell">
+    <aside class="side-menu" id="sideMenu">
+        <div class="brand-block">
+            <div class="cup-logo">☕</div>
+            <div class="brand">SmartCafe</div>
+            <div class="brand-subtitle">Веб-система учета продуктов, продаж и финансовых показателей кафе</div>
+        </div>
+
+        <nav class="side-nav">
+            <a class="{% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}"><span>⌂</span>Главная</a>
+            <a class="{% if request.endpoint == 'recipes' %}active{% endif %}" href="{{ url_for('recipes') }}"><span>▣</span>Техкарты</a>
+            <a class="{% if request.endpoint == 'sales' %}active{% endif %}" href="{{ url_for('sales') }}"><span>🛒</span>Продажи</a>
+            <a class="{% if request.endpoint == 'expenses' %}active{% endif %}" href="{{ url_for('expenses') }}"><span>▤</span>Расходы</a>
+            <a class="{% if request.endpoint == 'stock' %}active{% endif %}" href="{{ url_for('stock') }}"><span>◇</span>Склад</a>
+            <a class="{% if request.endpoint == 'movements' %}active{% endif %}" href="{{ url_for('movements') }}"><span>↔</span>Движение склада</a>
+            <a class="{% if request.endpoint == 'inventory' %}active{% endif %}" href="{{ url_for('inventory') }}"><span>▣</span>Ревизия склада</a>
+            <a class="{% if request.endpoint == 'inventory_history' or request.endpoint == 'inventory_detail' %}active{% endif %}" href="{{ url_for('inventory_history') }}"><span>↺</span>История ревизий</a>
+            <a class="{% if request.endpoint == 'import_invoice' %}active{% endif %}" href="{{ url_for('import_invoice') }}"><span>▧</span>Импорт накладной</a>
+            <a class="{% if request.endpoint == 'import_report' %}active{% endif %}" href="{{ url_for('import_report') }}"><span>▣</span>Импорт отчета OCR</a>
+            <a class="{% if request.endpoint == 'audit_logs' %}active{% endif %}" href="{{ url_for('audit_logs') }}"><span>☷</span>Журнал действий</a>
+            <a href="{{ url_for('change_location') }}"><span>🔁</span>Сменить склад</a>
+        </nav>
+
+        <div class="current-warehouse">
+            <span class="warehouse-icon">⌂</span>
+            <div>
+                <small>Текущий склад</small>
+                <strong>{% if session.get('location_id') %}Склад №{{ session.get('location_id') }} · {{ session.get('location_name') }}{% else %}Не выбран{% endif %}</strong>
+            </div>
+        </div>
+
+        <a class="logout-link" href="{{ url_for('logout') }}">↪ Выйти</a>
+    </aside>
+
+    <div class="main-area">
+        <header class="app-header">
+            <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+            <div>
+                <h1>{{ page_title or 'Панель управления' }}</h1>
+                <p>Веб-система учета продуктов, продаж и финансовых показателей кафе</p>
+            </div>
+            <div class="userbox">
+                <span class="avatar">●</span>
+                <div>
+                    <strong>{{ 'Администратор' if session.get('role') == 'admin' else 'Гость' }}</strong>
+                    <small>{{ session.get('location_name') or 'Выбор склада' }}</small>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+
+{% endif %}
+
+<div class="flash-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% set last_message = messages[-1] %}
+            <div class="flash-message {{ last_message[0] }}">{{ last_message[1] }}</div>
+        {% endif %}
+    {% endwith %}
+</div>
+
+<script>
+function toggleMenu(){
+    const menu = document.getElementById('sideMenu');
+    if(menu){ menu.classList.toggle('active'); }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% set page_title = 'Ревизия склада' %}
+{% block content %}
+
+{% if session.get('role') != 'guest' %}
+<form method="post">
+{% endif %}
+
+<section class="page-toolbar">
+    <div class="toolbar-left">
+        <select>
+            <option>Склад №{{ session.get('location_id') }}</option>
+        </select>
+        <input type="datetime-local">
+    </div>
+
+    {% if session.get('role') != 'guest' %}
+    <button class="btn-primary admin-only" type="submit">✓ Завершить ревизию</button>
+    {% endif %}
+</section>
+
+<section class="kpi-grid">
+    <div class="kpi-card">
+        <span>Всего товаров</span>
+        <strong>{{ products|length }}</strong>
+    </div>
+
+    <div class="kpi-card profit">
+        <span>Проверено</span>
+        <strong>{{ products|length }}</strong>
+    </div>
+
+    <div class="kpi-card income">
+        <span>Совпало</span>
+        <strong>—</strong>
+    </div>
+
+    <div class="kpi-card expense">
+        <span>Расхождения</span>
+        <strong>—</strong>
+    </div>
+</section>
+
+<div class="inventory-layout">
+    <section class="panel page-panel">
+        <h2>Товары</h2>
+
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Товар</th>
+                    <th>Категория</th>
+                    <th>Ед.</th>
+                    <th>Учетный остаток</th>
+                    <th>Фактический остаток</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for p in products %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td><strong>{{ p.name }}</strong></td>
+                    <td>{{ p.category }}</td>
+                    <td>{{ p.unit }}</td>
+                    <td>{{ '%g'|format(p.quantity|float) }}</td>
+                    <td>
+                        {% if session.get('role') != 'guest' %}
+                        <input
+                            class="table-input"
+                            name="product_{{ p.id }}"
+                            type="number"
+                            step="any"
+                            value="{{ '%g'|format(p.quantity|float) }}">
+                        {% else %}
+                            {{ '%g'|format(p.quantity|float) }}
+                        {% endif %}
+                    </td>
+                    <td><span class="status success">Готово</span></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7">Нет товаров для ревизии</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <aside class="panel side-summary">
+        <h2>Прогресс ревизии</h2>
+
+        <div class="donut blue">
+            <span>100%</span>
+        </div>
+
+        <p>Проверьте фактические остатки и завершите ревизию.</p>
+
+        <h2>Итоги ревизии</h2>
+
+        <ul class="summary-list">
+            <li>Учетный остаток <b>{{ products|length }}</b></li>
+            <li>Фактический остаток <b>заполняется</b></li>
+        </ul>
+    </aside>
+</div>
+
+{% if session.get('role') != 'guest' %}
+</form>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% set page_title = 'Аналитика' %}
+{% block content %}
+<section class="kpi-grid"><div class="kpi-card income"><span>Доход</span><strong>{{ finance.income }} ₸</strong></div><div class="kpi-card expense"><span>Расход</span><strong>{{ finance.expenses }} ₸</strong></div><div class="kpi-card profit"><span>Прибыль</span><strong>{{ finance.profit }} ₸</strong></div><div class="kpi-card stock"><span>Стоимость склада</span><strong>{{ finance.stock_value }} ₸</strong></div></section>
+<div class="grid-two"><section class="panel page-panel"><h2>Продажи по товарам</h2><table class="modern-table"><thead><tr><th>Товар</th><th>Сумма</th></tr></thead><tbody>{% for i in range(sales_labels|length) %}<tr><td><strong>{{ sales_labels[i] }}</strong></td><td>{{ sales_values[i] }} ₸</td></tr>{% else %}<tr><td colspan="2">Продаж пока нет</td></tr>{% endfor %}</tbody></table></section><section class="panel page-panel"><h2>Расходы по категориям</h2><table class="modern-table"><thead><tr><th>Категория</th><th>Сумма</th></tr></thead><tbody>{% for i in range(expense_labels|length) %}<tr><td><strong>{{ expense_labels[i] }}</strong></td><td>{{ expense_values[i] }} ₸</td></tr>{% else %}<tr><td colspan="2">Расходов пока нет</td></tr>{% endfor %}</tbody></table></section></div>
+{% endblock %}

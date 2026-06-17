@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block auth %}
+<div class="login-page">
+    <form class="login-card" method="post">
+        <div class="cup-logo big">☕</div>
+        <h1>SmartCafe</h1>
+        <p>Веб-система учета продуктов, продаж и финансовых показателей кафе</p>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}<div class="alert {{ category }}">{{ message }}</div>{% endfor %}
+        {% endwith %}
+        <input name="username" placeholder="Логин" required>
+        <input name="password" type="password" placeholder="Пароль" required>
+        <button>Войти</button>
+        <!-- <small>Админ: admin / admin · Гость: guest / guest</small> -->
+    </form>
+</div>
+{% endblock %}

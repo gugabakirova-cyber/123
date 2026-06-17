@@ -1,0 +1,3 @@
+<table><thead><tr><th>Товар</th><th>Остаток</th><th>Мин.</th></tr></thead><tbody>
+{% for item in low_stock %}<tr><td>{{ item.name }}</td><td>{{ item.quantity }} {{ item.unit }}</td><td>{{ item.min_quantity }}</td></tr>{% else %}<tr><td colspan="3">Критичных остатков нет</td></tr>{% endfor %}
+</tbody></table>
